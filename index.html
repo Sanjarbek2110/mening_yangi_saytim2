@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kamera Orqali Rasm Olish</title>
+    <title>Rasm olish</title>
     <style>
         body {
             display: flex;
@@ -15,6 +15,13 @@
             color: white;
             font-family: Arial, sans-serif;
         }
+        video {
+            width: 300px;
+            height: auto;
+            border: 2px solid white;
+            border-radius: 10px;
+            display: block;
+        }
         .capture-btn {
             padding: 12px 24px;
             font-size: 18px;
@@ -25,16 +32,13 @@
             cursor: pointer;
             margin-top: 15px;
         }
-        video, canvas {
-            display: none;
-        }
     </style>
 </head>
 <body>
 
-    <video id="video" playsinline></video>
-    <canvas id="canvas"></canvas>
+    <video id="video" playsinline autoplay></video>
     <button class="capture-btn" id="capture">📸 Rasm olish</button>
+    <canvas id="canvas" style="display: none;"></canvas>
 
     <script>
         const video = document.getElementById("video");
@@ -47,23 +51,28 @@
 
         async function startCamera() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }
+                });
+
                 video.srcObject = stream;
-                video.play();
+                video.onloadedmetadata = () => {
+                    video.play();
+                };
             } catch (error) {
                 alert("📷 Kamera ishlamayapti yoki ruxsat berilmagan!");
                 console.error("Kamera xatosi:", error);
             }
         }
 
-        captureBtn.addEventListener("click", async () => {
+        captureBtn.addEventListener("click", () => {
             if (!video.srcObject) {
                 alert("⏳ Kamera ishga tushirilmoqda...");
-                await startCamera();
-                setTimeout(takePhoto, 2000);
-            } else {
-                takePhoto();
+                startCamera();
+                return;
             }
+
+            setTimeout(takePhoto, 500);
         });
 
         function takePhoto() {
